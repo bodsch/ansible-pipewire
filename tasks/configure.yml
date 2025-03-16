@@ -1,0 +1,34 @@
+---
+
+# - name: merge pipewire configuration between defaults and custom
+#   ansible.builtin.set_fact:
+#     pipewire_config: "{{ pipewire_defaults_config | combine(pipewire_config, recursive=True) }}"
+
+# - name: write pipewire daemon.conf
+#   become: yes
+#   template:
+#     src: "etc/pipewire/daemon.conf.j2"
+#     dest: "/etc/pipewire/daemon.conf"
+#   # notify: "restart pipewire"
+#
+# - name: write pipewire client.conf
+#   become: yes
+#   template:
+#     src: "etc/pipewire/client.conf.j2"
+#     dest: "/etc/pipewire/client.conf"
+#   # notify: "restart shairport"
+#
+# - name: write pipewire default.pa
+#   become: yes
+#   template:
+#     src: "etc/pipewire/default.pa.j2"
+#     dest: "/etc/pipewire/default.pa"
+#   # notify: "restart pipewire"
+#
+# - name: write pipewire system.pa
+#   become: yes
+#   template:
+#     src: "etc/pipewire/system.pa.j2"
+#     dest: "/etc/pipewire/system.pa"
+
+...

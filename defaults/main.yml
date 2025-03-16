@@ -1,0 +1,6 @@
+---
+
+pipewire_packages:
+  - pipewire-utils
+
+...

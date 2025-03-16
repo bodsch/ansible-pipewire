@@ -1,0 +1,22 @@
+---
+
+galaxy_info:
+  role_name: pipewire
+  namespace: bodsch
+
+  author: Bodo Schulz
+  description: ansible role to install and configure pipewire
+
+  license: Apache
+  min_ansible_version: "2.10"
+
+  platforms:
+    - name: ArchLinux
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+
+dependencies: []
+
+...

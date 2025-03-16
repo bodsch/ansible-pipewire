@@ -1,0 +1,11 @@
+---
+
+- name: start and enable service
+  ansible.builtin.service:
+    name: "{{ pipewire_service.name }}"
+    state: "{{ pipewire_service.state | default('started') }}"
+    enabled: "{{ pipewire_service.enabled | default(true) | bool }}"
+  notify:
+    - query the systemd journal
+
+...

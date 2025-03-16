@@ -1,0 +1,57 @@
+---
+
+pipewire_default_pa:
+  load_modules:
+      ### Automatically restore the volume of streams and devices
+    - name: module-device-restore
+    - name: module-stream-restore
+    - name: module-card-restore
+      ### Automatically augment property information from .desktop files
+      ### stored in /usr/share/application
+    - name: module-augment-properties
+      ### Should be after module-*-restore but before module-*-detect
+    - name: module-switch-on-port-available
+      ### Load audio drivers statically
+      ### (it's probably better to not load these drivers manually, but instead
+      ### use module-udev-detect -- see below -- for doing this automatically)
+    # - name: load-module module-alsa-sink
+    # - name: load-module module-alsa-source device=hw:1,0
+    # - name: load-module module-oss device="/dev/dsp" sink_name=output source_name=input
+    # - name: load-module module-oss-mmap device="/dev/dsp" sink_name=output source_name=input
+    # - name: load-module module-null-sink
+    # - name: load-module module-pipe-sink
+      ### Automatically load driver modules depending on the hardware available
+    - ifexists: module-udev-detect
+      ### Use the static hardware detection module (for systems that lack udev support)
+      else: module-detect
+      ### Automatically load driver modules for Bluetooth hardware
+    - ifexists: module-bluetooth-policy
+    - ifexists: module-bluetooth-discover
+      ### Load several protocols
+    - ifexists: module-esound-protocol-unix
+    - name: module-native-protocol-unix
+      ### Network access (may be configured with paprefs, so leave this commented
+      ### here if you plan to use paprefs)
+    # - name: load-module module-esound-protocol-tcp
+    # - name: load-module module-native-protocol-tcp
+    # - name: load-module module-zeroconf-publish
+      ### Load the RTP receiver module (also configured via paprefs, see above)
+    # - name: load-module module-rtp-recv
+
+      ### Load the RTP sender module (also configured via paprefs, see above)
+    # - name: load-module module-null-sink
+    #   args: sink_name=rtp format=s16be channels=2 rate=44100 sink_properties="device.description='RTP Multicast Sink'"
+    # - name: load-module module-rtp-send source=rtp.monitor
+      ###
+    # - name: "module-native-protocol-tcp"
+    #   args: "auth-ip-acl=127.0.0.1;10.0.0.0/24;192.168.0.0/24 auth-anonymous=1"
+    # - name: "module-native-protocol-unix"
+    #   args: "auth-group=audio socket=/tmp/pulse-server"
+    # - name: "module-zeroconf-publish"
+    # - name: "module-http-protocol-tcp"
+    # - name: "module-cli-protocol-tcp"
+    # - name: "module-cli-protocol-unix"
+    # - name: "module-null-sink"
+    # - name: "module-rtp-recv"
+
+...
