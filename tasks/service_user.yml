@@ -1,0 +1,107 @@
+---
+
+- name: build effective user socket unit list
+  when:
+    - not running_in_check_mode
+  ansible.builtin.set_fact:
+    pipewire_active_socket_units: "{{ pipewire_user_socket_units | pipewire_socket_units(
+      enable_pulse=pipewire_enable_pulse | bool) }}"
+
+# enable + start the systemd --user units for pipewire_user.
+# linger MUST be enabled first so /run/user/<uid> and the user manager exist
+# before any 'systemctl --user' call.
+
+- name: "user {{ pipewire_user.name }}: enable linger"
+  when:
+    - not running_in_check_mode
+  ansible.builtin.command: "loginctl enable-linger {{ pipewire_user.name }}"
+  args:
+    creates: "/var/lib/systemd/linger/{{ pipewire_user.name }}"
+
+- name: "user {{ pipewire_user.name }}: get account info"
+  bodsch.core.account_defaults:
+    user: "{{ pipewire_user.name }}"
+  register: pipewire_user_account_result
+
+- name: "user {{ pipewire_user.name }}: set runtime directory"
+  when:
+    - not running_in_check_mode
+  ansible.builtin.set_fact:
+    pipewire_xdg_runtime_dir: "/run/user/{{ pipewire_user_account_result.uid }}"
+
+- name: "user {{ pipewire_user.name }}: start the user systemd manager"
+  when:
+    - not running_in_check_mode
+  # at provision time the user is usually not logged in, so the per-user
+  # 'systemd --user' instance is not running yet. linger makes it persistent
+  # across boots, but it must be started explicitly to act on it right now.
+  ansible.builtin.systemd_service:
+    name: "user@{{ pipewire_user_account_result.uid }}.service"
+    state: started
+
+- name: "user {{ pipewire_user.name }}: wait for the user systemd manager"
+  when:
+    - not running_in_check_mode
+  ansible.builtin.wait_for:
+    # enabling linger starts 'systemd --user' for this user. its private socket
+    # only exists once the manager is up, and that is what 'systemctl --user'
+    # connects to via local transport - so this is the correct readiness gate.
+    path: "{{ pipewire_xdg_runtime_dir }}/systemd/private"
+    timeout: 60
+
+- name: "user {{ pipewire_user.name }}: mask legacy pulseaudio user units"
+  when:
+    - not running_in_check_mode
+    - pipewire_mask_pulseaudio | bool
+    - pipewire_enable_pulse | bool
+    - ansible_facts.os_family | lower == "debian"
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    scope: user
+    masked: true
+    state: stopped
+  become: true
+  become_user: "{{ pipewire_user.name }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ pipewire_xdg_runtime_dir }}"
+  loop:
+    - pulseaudio.service
+    - pulseaudio.socket
+  register: pipewire_pulseaudio_mask
+  failed_when:
+    - pipewire_pulseaudio_mask is failed
+    - "'Could not find the requested service' not in (pipewire_pulseaudio_mask.msg | default(''))"
+
+- name: "user {{ pipewire_user.name }}: enable and start pipewire sockets"
+  when:
+    - not running_in_check_mode
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    scope: user
+    enabled: true
+    state: started
+  become: true
+  become_user: "{{ pipewire_user.name }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ pipewire_xdg_runtime_dir }}"
+  loop: "{{ pipewire_active_socket_units }}"
+  register: pipewire_socket_result
+  until: pipewire_socket_result is succeeded
+  retries: 3
+  delay: 2
+
+- name: "user {{ pipewire_user.name }}: enable and start session manager"
+  when:
+    - not running_in_check_mode
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    scope: user
+    enabled: true
+    state: started
+  become: true
+  become_user: "{{ pipewire_user.name }}"
+  environment:
+    XDG_RUNTIME_DIR: "{{ pipewire_xdg_runtime_dir }}"
+  loop: "{{ pipewire_user_service_units }}"
+
+...

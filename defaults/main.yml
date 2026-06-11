@@ -1,6 +1,61 @@
 ---
 
-pipewire_packages:
-  - pipewire-utils
+# additional packages the user wants to install alongside pipewire
+pipewire_packages: []
+
+# optional pipewire components
+pipewire_enable_pulse: true       # pipewire-pulse (PulseAudio replacement)
+pipewire_enable_alsa: true        # pipewire-alsa (ALSA compatibility)
+pipewire_enable_jack: false       # pipewire-jack (JACK compatibility)
+pipewire_enable_bluetooth: true   # bluetooth audio support
+
+# on debian / ubuntu, mask the legacy pulseaudio user units so they do not
+# grab the audio socket. on archlinux this is handled via package conflicts.
+pipewire_mask_pulseaudio: true
+
+# ---------------------------------------------------------------------------------------
+# global (system wide) configuration -> /etc/pipewire/*.conf.d/ and /etc/wireplumber/
+
+# rendered into /etc/pipewire/pipewire.conf.d/10-pipewire.conf (context.properties)
+pipewire_global_config:
+  clock_rate: 48000
+  clock_allowed_rates:
+    - 44100
+    - 48000
+    - 96000
+  quantum: 1024
+  min_quantum: 32
+  max_quantum: 2048
+
+# free form additional properties merged into the drop-ins (key -> value)
+pipewire_context_properties: {}   # extra context.properties (pipewire.conf.d)
+pipewire_pulse_properties: {}     # pulse.properties (pipewire-pulse.conf.d)
+pipewire_client_properties: {}    # stream.properties (client.conf.d)
+
+# wireplumber session manager configuration
+#   on wireplumber >= 0.5 (archlinux, debian 13, ubuntu 24.04) the SPA-JSON
+#     format is used -> set pipewire_wireplumber_settings (dict)
+#   on wireplumber 0.4  (debian 12, ubuntu 22.04) the lua format is used
+#     -> set pipewire_wireplumber_lua (list of raw lua lines)
+pipewire_wireplumber_settings: {}
+pipewire_wireplumber_lua: []
+
+# ---------------------------------------------------------------------------------------
+# per user configuration
+#
+# pipewire_users may contain plain user names or dictionaries:
+#   pipewire_users:
+#     - alice
+#     - name: bob
+#       enable_services: true          # default: pipewire_manage_user_services
+#       config:
+#         global: { clock_rate: 44100 }   # overrides pipewire_global_config
+#         context_properties: {}
+#         pulse_properties: {}
+#         client_properties: {}
+pipewire_users: []
+
+# enable + start the systemd --user units and run loginctl enable-linger
+pipewire_manage_user_services: true
 
 ...

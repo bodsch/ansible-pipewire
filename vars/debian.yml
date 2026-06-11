@@ -1,3 +1,7 @@
 ---
 
+# on debian the bluetooth SPA plugin is a separate package
+pipewire_bluetooth_packages:
+  - libspa-0.2-bluetooth
+
 ...

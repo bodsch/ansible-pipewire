@@ -1,0 +1,9 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+# wireplumber 0.5+ settings (SPA-JSON drop-in)
+
+wireplumber.settings = {
+{% for key, value in _pw_wp.items() %}
+  {{ key }} = {{ value | to_json }}
+{% endfor %}
+}

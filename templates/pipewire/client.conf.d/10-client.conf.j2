@@ -1,0 +1,9 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+# pipewire client stream properties (drop-in, merged into client.conf)
+
+stream.properties = {
+{% for key, value in _pw_client.items() %}
+    {{ key }} = {{ value | to_json }}
+{% endfor %}
+}

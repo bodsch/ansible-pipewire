@@ -1,0 +1,14 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+# pipewire daemon context properties (drop-in, merged into pipewire.conf)
+
+context.properties = {
+    default.clock.rate          = {{ _pw_clock.clock_rate }}
+    default.clock.allowed-rates = [ {{ _pw_clock.clock_allowed_rates | join(', ') }} ]
+    default.clock.quantum       = {{ _pw_clock.quantum }}
+    default.clock.min-quantum   = {{ _pw_clock.min_quantum }}
+    default.clock.max-quantum   = {{ _pw_clock.max_quantum }}
+{% for key, value in _pw_extra.items() %}
+    {{ key }} = {{ value | to_json }}
+{% endfor %}
+}

@@ -1,0 +1,9 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+# pipewire-pulse properties (drop-in, merged into pipewire-pulse.conf)
+
+pulse.properties = {
+{% for key, value in _pw_pulse.items() %}
+    {{ key }} = {{ value | to_json }}
+{% endfor %}
+}

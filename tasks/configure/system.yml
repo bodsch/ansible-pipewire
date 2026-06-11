@@ -1,0 +1,118 @@
+---
+
+# --- global (system wide) configuration ---------------------------------------------
+
+- name: "create pipewire drop-in directories"
+  when:
+    - not running_in_check_mode
+  bodsch.core.directories:
+    base_path: "{{ pipewire_etc_dir }}"
+    owner: root
+    group: root
+    mode: "0755"
+    paths:
+      - path: pipewire.conf.d
+      - path: pipewire-pulse.conf.d
+      - path: client.conf.d
+
+- name: deploy global pipewire context drop-in
+  when:
+    - not running_in_check_mode
+  ansible.builtin.template:
+    src: pipewire/pipewire.conf.d/10-pipewire.conf.j2
+    dest: "{{ pipewire_etc_dir }}/pipewire.conf.d/10-pipewire.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    _pw_clock: "{{ pipewire_global_config }}"
+    _pw_extra: "{{ pipewire_context_properties }}"
+  notify:
+    - restart pipewire user services
+
+- name: deploy global pipewire-pulse drop-in
+  when:
+    - not running_in_check_mode
+    - pipewire_enable_pulse | bool
+    - pipewire_pulse_properties | length > 0
+  ansible.builtin.template:
+    src: pipewire/pipewire-pulse.conf.d/10-pulse.conf.j2
+    dest: "{{ pipewire_etc_dir }}/pipewire-pulse.conf.d/10-pulse.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    _pw_pulse: "{{ pipewire_pulse_properties }}"
+  notify:
+    - restart pipewire user services
+
+- name: deploy global pipewire client drop-in
+  when:
+    - not running_in_check_mode
+    - pipewire_client_properties | length > 0
+  ansible.builtin.template:
+    src: pipewire/client.conf.d/10-client.conf.j2
+    dest: "{{ pipewire_etc_dir }}/client.conf.d/10-client.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    _pw_client: "{{ pipewire_client_properties }}"
+  notify:
+    - restart pipewire user services
+
+# --- wireplumber session manager (format depends on version) ------------------------
+
+- name: configure wireplumber (spa-json, >= 0.5)
+  when:
+    - not running_in_check_mode
+    - pipewire_wireplumber_json | bool
+    - pipewire_wireplumber_settings | length > 0
+  block:
+    - name: create wireplumber drop-in directory
+      ansible.builtin.file:
+        path: "{{ pipewire_wireplumber_etc_dir }}/wireplumber.conf.d"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: deploy wireplumber settings (json)
+      ansible.builtin.template:
+        src: wireplumber/wireplumber.conf.d/50-settings.conf.j2
+        dest: "{{ pipewire_wireplumber_etc_dir }}/wireplumber.conf.d/50-settings.conf"
+        owner: root
+        group: root
+        mode: "0644"
+      vars:
+        _pw_wp: "{{ pipewire_wireplumber_settings }}"
+      notify:
+        - restart pipewire user services
+
+- name: configure wireplumber (lua, 0.4)
+  when:
+    - not running_in_check_mode
+    - not (pipewire_wireplumber_json | bool)
+    - pipewire_wireplumber_lua | length > 0
+  block:
+    - name: create wireplumber lua drop-in directory
+      ansible.builtin.file:
+        path: "{{ pipewire_wireplumber_etc_dir }}/main.lua.d"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: deploy wireplumber settings (lua)
+      ansible.builtin.template:
+        src: wireplumber/main.lua.d/50-settings.lua.j2
+        dest: "{{ pipewire_wireplumber_etc_dir }}/main.lua.d/50-settings.lua"
+        owner: root
+        group: root
+        mode: "0644"
+      vars:
+        _pw_wp_lua: "{{ pipewire_wireplumber_lua }}"
+      notify:
+        - restart pipewire user services
+
+...

@@ -2,8 +2,30 @@
 
 pipewire_dependencies: []
 
+# base packages, always installed
 pipewire_defaults_packages:
   - pipewire
+  - wireplumber
+
+# component -> package(s); can be overridden per distribution in vars/<distro>.yml
+pipewire_pulse_packages:
+  - pipewire-pulse
+pipewire_alsa_packages:
+  - pipewire-alsa
+pipewire_jack_packages:
+  - pipewire-jack
+pipewire_bluetooth_packages: []
+
+# systemd --user units managed per user
+pipewire_user_socket_units:
+  - pipewire.socket
+  - pipewire-pulse.socket
+pipewire_user_service_units:
+  - wireplumber.service
+
+# configuration locations
+pipewire_etc_dir: /etc/pipewire
+pipewire_wireplumber_etc_dir: /etc/wireplumber
 
 # ---------------------------------------------------------------------------------------
 

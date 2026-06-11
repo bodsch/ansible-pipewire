@@ -1,0 +1,9 @@
+---
+
+- name: "configure: system"
+  ansible.builtin.include_tasks: configure/system.yml
+
+- name: "configure: user"
+  ansible.builtin.include_tasks: configure/user.yml
+
+...

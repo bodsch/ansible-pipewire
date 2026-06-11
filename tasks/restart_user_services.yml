@@ -1,0 +1,26 @@
+---
+
+# restart the pipewire stack for pipewire_user so configuration changes take effect.
+# invoked from the 'restart pipewire user services' handler.
+
+- name: "user {{ pipewire_user.name }}: get account info"
+  bodsch.core.account_defaults:
+    user: "{{ pipewire_user.name }}"
+  register: pipewire_user_account_result
+
+- name: "user {{ pipewire_user.name }}: restart pipewire stack"
+  when:
+    - not running_in_check_mode
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    scope: user
+    state: restarted
+  become: true
+  become_user: "{{ pipewire_user.name }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ pipewire_user_account_result.uid }}"
+  loop: "{{ ['pipewire.service']
+    + (['pipewire-pulse.service'] if pipewire_enable_pulse | bool else [])
+    + ['wireplumber.service'] }}"
+
+...

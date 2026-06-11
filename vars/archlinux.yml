@@ -1,3 +1,9 @@
 ---
 
+# on archlinux the bluetooth SPA plugin ships within the pipewire package;
+# only the bluez daemon and tools are required additionally.
+pipewire_bluetooth_packages:
+  - bluez
+  - bluez-utils
+
 ...

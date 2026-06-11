@@ -1,12 +1,12 @@
 ---
 
-- name: manage pipewire user services
+# --- per user configuration ---------------------------------------------------------
+
+- name: configure per user
   when:
     - not running_in_check_mode
-    - pipewire_manage_user_services | bool
     - pipewire_normalized_users | default([]) | count > 0
-    - pipewire_user.enable_services | default(true) | bool
-  ansible.builtin.include_tasks: service_user.yml
+  ansible.builtin.include_tasks: user.yml
   loop: "{{ pipewire_normalized_users | default([]) }}"
   loop_control:
     loop_var: pipewire_user

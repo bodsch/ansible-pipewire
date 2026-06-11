@@ -1,31 +1,41 @@
 ---
 
-- name: merge pipewire packages between defaults and custom
+- name: build effective package list
+  when:
+    - not running_in_check_mode
   ansible.builtin.set_fact:
-    pipewire_packages: "{{ pipewire_packages | union(pipewire_defaults_packages) | sort | unique }}"
+    pipewire_packages: "{{ pipewire_defaults_packages | pipewire_packages(
+      pulse_packages=pipewire_pulse_packages,
+      alsa_packages=pipewire_alsa_packages,
+      jack_packages=pipewire_jack_packages,
+      bluetooth_packages=pipewire_bluetooth_packages,
+      extra_packages=pipewire_packages,
+      enable_pulse=pipewire_enable_pulse | bool,
+      enable_alsa=pipewire_enable_alsa | bool,
+      enable_jack=pipewire_enable_jack | bool,
+      enable_bluetooth=pipewire_enable_bluetooth | bool) }}"
 
 - name: install package
+  when:
+    - not running_in_check_mode
   ansible.builtin.package:
     name: "{{ pipewire_packages }}"
     state: present
 
-# - name: get information
-#   ansible.builtin.command: |
-#     ansible --version
-#   register: pipewire_information
-#
-# - name: define ansible version
-#   ansible.builtin.set_fact:
-#     pipewire_version: "{{ pipewire_information.version }}"
-#     pipewire_major_version: "{{ pipewire_information.major_version }}"
-#   when:
-#     - pipewire_information.rc == 0
-#
-# - name: create custom fact file
-#   bodsch.core.facts:
-#     name: ansible
-#     facts:
-#       version: "{{ pipewire_version }}"
-#       major_version: "{{ pipewire_major_version }}"
+- name: detect wireplumber version
+  when:
+    - not running_in_check_mode
+  ansible.builtin.command: wireplumber --version
+  changed_when: false
+  failed_when: false
+  register: pipewire_wireplumber_information
+
+- name: define wireplumber configuration style (json >= 0.5, lua for 0.4)
+  when:
+    - not running_in_check_mode
+  ansible.builtin.set_fact:
+    pipewire_wireplumber_json: "{{ (_wp_version | default('0.5', true)) is version('0.5', '>=') }}"
+  vars:
+    _wp_version: "{{ pipewire_wireplumber_information.stdout | default('') | regex_search('[0-9]+\\.[0-9]+') }}"
 
 ...

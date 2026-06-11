@@ -1,0 +1,60 @@
+---
+
+# per user pipewire configuration in ~/.config
+# pipewire_user is a dict: { name, config (optional), ... }
+
+- name: "user {{ pipewire_user.name }}: deploy configuration"
+  become: true
+  become_user: "{{ pipewire_user.name }}"
+  when:
+    - not running_in_check_mode
+    - pipewire_user.config is defined
+    - pipewire_user.config | length > 0
+  vars:
+    _pw_clock: "{{ pipewire_global_config | combine(pipewire_user.config.global | default({}), recursive=True) }}"
+    _pw_extra: "{{ pipewire_context_properties | combine(pipewire_user.config.context_properties | default({}), recursive=True) }}"
+    _pw_pulse: "{{ pipewire_pulse_properties | combine(pipewire_user.config.pulse_properties | default({}), recursive=True) }}"
+    _pw_client: "{{ pipewire_client_properties | combine(pipewire_user.config.client_properties | default({}), recursive=True) }}"
+  block:
+
+    - name: "user {{ pipewire_user.name }}: create drop-in directories"
+      when:
+        - not running_in_check_mode
+      bodsch.core.directories:
+        base_path: "~/.config/pipewire"
+        mode: "0755"
+        paths:
+          - path: pipewire.conf.d
+          - path: pipewire-pulse.conf.d
+          - path: client.conf.d
+
+    - name: "user {{ pipewire_user.name }}: deploy pipewire context drop-in"
+      ansible.builtin.template:
+        src: pipewire/pipewire.conf.d/10-pipewire.conf.j2
+        dest: "~/.config/pipewire/pipewire.conf.d/10-pipewire.conf"
+        mode: "0644"
+      notify:
+        - restart pipewire user services
+
+    - name: "user {{ pipewire_user.name }}: deploy pipewire-pulse drop-in"
+      ansible.builtin.template:
+        src: pipewire/pipewire-pulse.conf.d/10-pulse.conf.j2
+        dest: "~/.config/pipewire/pipewire-pulse.conf.d/10-pulse.conf"
+        mode: "0644"
+      when:
+        - pipewire_enable_pulse | bool
+        - _pw_pulse | length > 0
+      notify:
+        - restart pipewire user services
+
+    - name: "user {{ pipewire_user.name }}: deploy pipewire client drop-in"
+      ansible.builtin.template:
+        src: pipewire/client.conf.d/10-client.conf.j2
+        dest: "~/.config/pipewire/client.conf.d/10-client.conf"
+        mode: "0644"
+      when:
+        - _pw_client | length > 0
+      notify:
+        - restart pipewire user services
+
+...

@@ -1,0 +1,14 @@
+---
+
+- name: restart pipewire user services
+  ansible.builtin.include_tasks: restart_user_services.yml
+  loop: "{{ pipewire_normalized_users | default([]) }}"
+  loop_control:
+    loop_var: pipewire_user
+    label: "{{ pipewire_user.name }}"
+  when:
+    - pipewire_manage_user_services | bool
+    - pipewire_normalized_users | default([]) | count > 0
+    - pipewire_user.enable_services | default(true) | bool
+
+...

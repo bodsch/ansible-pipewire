@@ -1,0 +1,7 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+-- {{ ansible_managed }}
+-- wireplumber 0.4 settings (lua drop-in)
+
+{% for line in _pw_wp_lua %}
+{{ line }}
+{% endfor %}
